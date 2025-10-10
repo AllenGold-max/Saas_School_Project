@@ -33,3 +33,9 @@ class ScoreAdmin(admin.ModelAdmin):
     list_display = ('student', 'subject', 'term', 'session', 'score', 'recorded_by', 'date_recorded')
     list_filter = ('term', 'session', 'subject')
     search_fields = ('student__admission_number', 'student__first_name', 'student__last_name')
+
+admin.site.register(School)
+admin.site.register(SchoolClass)
+admin.site.register(Student)
+admin.site.register(Subject)
+admin.site.register(Score)
