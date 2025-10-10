@@ -34,7 +34,3 @@ class ScoreAdmin(admin.ModelAdmin):
     list_filter = ('term', 'session', 'subject')
     search_fields = ('student__admission_number', 'student__first_name', 'student__last_name')
 
-admin.site.register(School)
-admin.site.register(SchoolClass)
-admin.site.register(Student)
-admin.site.register(Subject)
