@@ -1,6 +1,14 @@
 # Register your models here.
 from django.contrib import admin
-from .models import School, SchoolClass, Subject, Student, Score
+from django.contrib.auth.admin import UserAdmin
+from .models import School, SchoolClass, Subject, Student, Score, CustomUser
+
+
+@admin.register(CustomUser)
+class CustomUserAdmin(UserAdmin):
+    list_display = ('username', 'email', 'first_name', 'last_name', 'is_staff')
+    search_fields = ('username', 'email')
+
 
 @admin.register(School)
 class SchoolAdmin(admin.ModelAdmin):

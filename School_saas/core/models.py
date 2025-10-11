@@ -1,10 +1,11 @@
 # Create your models here.
 from django.db import models
-from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.contrib.auth.models import AbstractUser
 
-User = get_user_model()
-
+# -------------------
+# CHOICES
+# -------------------
 GENDER_CHOICES = [
     ('M', 'Male'),
     ('F', 'Female'),
@@ -17,6 +18,10 @@ TERM_CHOICES = [
     ('3', 'Third Term'),
 ]
 
+
+# -------------------
+# SCHOOL MODEL
+# -------------------
 class School(models.Model):
     name = models.CharField(max_length=255)
     address = models.TextField(blank=True)
@@ -26,8 +31,26 @@ class School(models.Model):
         return self.name
 
 
+# -------------------
+# CUSTOM USER MODEL
+# -------------------
+class CustomUser(AbstractUser):
+    ROLE_CHOICES = (
+        ('admin', 'Admin'),
+        ('teacher', 'Teacher'),
+        ('student', 'Student'),
+    )
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='teacher')
+    school = models.ForeignKey('School', on_delete=models.CASCADE, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.username} ({self.role})"
+
+
+# -------------------
+# CLASS MODEL
+# -------------------
 class SchoolClass(models.Model):
-    # e.g. "JSS1A", "SS2B", "Year 7 - A"
     name = models.CharField(max_length=100)
     school = models.ForeignKey(School, on_delete=models.CASCADE, related_name='classes')
     year = models.CharField(max_length=20, blank=True)  # optional field like "2024/2025"
@@ -39,6 +62,9 @@ class SchoolClass(models.Model):
         return f"{self.name} - {self.school.name}"
 
 
+# -------------------
+# SUBJECT MODEL
+# -------------------
 class Subject(models.Model):
     name = models.CharField(max_length=120)
     code = models.CharField(max_length=20, blank=True, help_text="Optional subject code")
@@ -48,6 +74,9 @@ class Subject(models.Model):
         return self.name
 
 
+# -------------------
+# STUDENT MODEL
+# -------------------
 class Student(models.Model):
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
@@ -65,6 +94,9 @@ class Student(models.Model):
         return f"{self.admission_number} - {self.first_name} {self.last_name}"
 
 
+# -------------------
+# SCORE MODEL
+# -------------------
 class Score(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='scores')
     subject = models.ForeignKey(Subject, on_delete=models.PROTECT, related_name='scores')
@@ -75,7 +107,7 @@ class Score(models.Model):
         validators=[MinValueValidator(0), MaxValueValidator(100)]
     )
     max_score = models.DecimalField(max_digits=5, decimal_places=2, default=100)
-    recorded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)  # teacher/admin who recorded
+    recorded_by = models.ForeignKey('CustomUser', on_delete=models.SET_NULL, null=True, blank=True)
     date_recorded = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -91,4 +123,3 @@ class Score(models.Model):
 
     def __str__(self):
         return f"{self.student} | {self.subject} | {self.term} | {self.session} | {self.score}"
-
