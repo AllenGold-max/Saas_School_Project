@@ -6,9 +6,11 @@ from .models import School, SchoolClass, Subject, Student, Score, CustomUser
 
 @admin.register(CustomUser)
 class CustomUserAdmin(UserAdmin):
-    list_display = ('username', 'email', 'first_name', 'last_name', 'is_staff')
+    list_display = ('username', 'email', 'role', 'first_name', 'last_name', 'is_staff')
     search_fields = ('username', 'email')
-
+    fieldsets = UserAdmin.fieldsets + (
+        ('Role & Permissions', {'fields': ('role',)}),
+    )
 
 @admin.register(School)
 class SchoolAdmin(admin.ModelAdmin):
@@ -41,4 +43,5 @@ class ScoreAdmin(admin.ModelAdmin):
     list_display = ('student', 'subject', 'term', 'session', 'score', 'recorded_by', 'date_recorded')
     list_filter = ('term', 'session', 'subject')
     search_fields = ('student__admission_number', 'student__first_name', 'student__last_name')
+
 
