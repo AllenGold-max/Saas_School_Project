@@ -15,14 +15,23 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
-
 from django.contrib import admin
-from django.urls import path, include
-from core import views  # 👈 import this
+from django.urls import path
+from django.contrib.auth.decorators import user_passes_test
+from django.urls import include
+from core import views  # 👈 we’ll use this for homepage
+
+# Check function — allow only staff or superuser
+def is_school_admin(user):
+    return user.is_staff or user.is_superuser
+
+# Restrict admin access
+restricted_admin_view = user_passes_test(is_school_admin)(admin.site.urls)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('accounts.urls')),
-    path('', views.dashboard, name='dashboard'),  # 👈 homepage
-    path('', include('core.urls')),
+    path('core/', include('core.urls')),
+    path('', include('core.urls')),  # Redirect root to core app
+      path('', views.home, name='home'),
 ]

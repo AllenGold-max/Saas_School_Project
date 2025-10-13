@@ -1,20 +1,30 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Dashboard | EduTrack</title>
-</head>
-<body>
-    <h2>Welcome, {{ user.username }}!</h2>
-    <p>Your role: {{ user.role }}</p>
+{% extends 'base.html' %}
 
-    {% if user.role == 'admin' %}
-        <p>You can manage your school data here.</p>
-    {% elif user.role == 'teacher' %}
-        <p>You can manage your students and scores.</p>
-    {% else %}
-        <p>Welcome student — you can view your performance.</p>
-    {% endif %}
+{% block title %}Dashboard | EduTrack{% endblock %}
 
-    <a href="{% url 'logout' %}">Logout</a>
-</body>
-</html>
+{% block content %}
+<div class="dashboard-container">
+    <h2>Welcome, {{ user.username }} 🎉</h2>
+    <p>Manage your school records, students, and more from here.</p>
+
+    <div class="dashboard-cards">
+        <div class="card">
+            <h3>Students</h3>
+            <p>View and manage student records</p>
+            <a href="{% url 'students' %}" class="btn">Go</a>
+        </div>
+
+        <div class="card">
+            <h3>Classes</h3>
+            <p>Manage school classes and subjects</p>
+            <a href="{% url 'classes' %}" class="btn">Go</a>
+        </div>
+
+        <div class="card">
+            <h3>Teachers</h3>
+            <p>View and assign teachers to subjects</p>
+            <a href="{% url 'teachers' %}" class="btn">Go</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
