@@ -30,6 +30,9 @@ class School(models.Model):
     def __str__(self):
         return self.name
 
+    class Meta:
+        verbose_name_plural = "Schools"
+
 
 # -------------------
 # CUSTOM USER MODEL
@@ -57,9 +60,10 @@ class SchoolClass(models.Model):
 
     class Meta:
         unique_together = ('name', 'school')
+        verbose_name_plural = "Classes"
 
     def __str__(self):
-        return f"{self.name} - {self.school.name}"
+        return f"{self.name} ({self.year}) - {self.school.name}"
 
 
 # -------------------
@@ -71,7 +75,10 @@ class Subject(models.Model):
     school = models.ForeignKey(School, on_delete=models.CASCADE, related_name='subjects', null=True, blank=True)
 
     def __str__(self):
-        return self.name
+        return f"{self.name} ({self.school.name if self.school else 'No School'})"
+
+    class Meta:
+        verbose_name_plural = "Subjects"
 
 
 # -------------------
@@ -89,9 +96,21 @@ class Student(models.Model):
 
     class Meta:
         ordering = ['last_name', 'first_name']
+        verbose_name_plural = "Students"
 
     def __str__(self):
         return f"{self.admission_number} - {self.first_name} {self.last_name}"
+
+    @property
+    def full_name(self):
+        return f"{self.first_name} {self.last_name}"
+
+    def get_average_score(self):
+        scores = self.scores.all()
+        if not scores:
+            return None
+        total = sum([s.percentage() for s in scores if s.percentage() is not None])
+        return round(total / len(scores), 2)
 
 
 # -------------------
@@ -114,6 +133,8 @@ class Score(models.Model):
         indexes = [
             models.Index(fields=['term', 'session']),
         ]
+        unique_together = ('student', 'subject', 'term', 'session')
+        verbose_name_plural = "Scores"
 
     def percentage(self):
         try:
@@ -122,4 +143,4 @@ class Score(models.Model):
             return None
 
     def __str__(self):
-        return f"{self.student} | {self.subject} | {self.term} | {self.session} | {self.score}"
+        return f"{self.student.full_name} | {self.subject.name} | {self.term} | {self.session} | {self.score}"

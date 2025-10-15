@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}Add / Edit Score | EduTrack{% endblock %}
+{% block content %}
+<h2 class="text-2xl font-semibold mb-4">Add / Edit Score</h2>
+
+<form method="POST" class="space-y-3">
+    {% csrf_token %}
+    {{ form.as_p }}
+
+    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
+        Save
+    </button>
+</form>
+{% endblock %}
+
+@login_required(login_url='login')
+def scores(request):
+    user = request.user
+
+    # Show only scores for the teacher's school
+    if user.role == 'teacher':
+        score_list = Score.objects.filter(student__school=user.school)
+    elif user.role == 'admin':
+        score_list = Score.objects.filter(student__school=user.school)
+    else:
+        score_list = Score.objects.none()  # empty for other roles
+
+    context = {'scores': score_list}
+    return render(request, 'core/scores.html', context)

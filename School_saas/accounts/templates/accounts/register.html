@@ -4,20 +4,37 @@
 
 {% block content %}
     <h2>Register</h2>
+
     {% if messages %}
         {% for message in messages %}
             <p style="color:red;">{{ message }}</p>
         {% endfor %}
     {% endif %}
+
     <form method="POST">
         {% csrf_token %}
+
+        <label>School Name:</label>
+        <input type="text" name="school_name" required><br><br>
+
         <label>Username:</label>
-        <input type="text" name="username"><br><br>
+        <input type="text" name="username" required><br><br>
+
         <label>Email:</label>
-        <input type="email" name="email"><br><br>
+        <input type="email" name="email" required><br><br>
+
         <label>Password:</label>
-        <input type="password" name="password"><br><br>
+        <input type="password" name="password" required><br><br>
+
+        <label>Role:</label>
+        <select name="role" required>
+            <option value="admin">Admin</option>
+            <option value="teacher">Teacher</option>
+            <option value="student">Student</option>
+        </select><br><br>
+
         <button type="submit">Register</button>
+
         <p>Already have an account? <a href="{% url 'login' %}">Login here</a></p>
     </form>
 {% endblock %}

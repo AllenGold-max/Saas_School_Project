@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}All Scores | EduTrack{% endblock %}
+
+{% block content %}
+<h2 class="text-2xl font-semibold mb-4">Recorded Scores</h2>
+
+<table border="1" cellpadding="8" cellspacing="0" width="100%">
+    <tr>
+        <th>Student</th>
+        <th>Subject</th>
+        <th>Term</th>
+        <th>Session</th>
+        <th>Score</th>
+        <th>Max Score</th>
+        <th>Recorded By</th>
+        <th>Actions</th>
+    </tr>
+
+    {% for score in scores %}
+    <tr>
+        <td>{{ score.student }}</td>
+        <td>{{ score.subject }}</td>
+        <td>{{ score.get_term_display }}</td>
+        <td>{{ score.session }}</td>
+        <td>{{ score.score }}</td>
+        <td>{{ score.max_score }}</td>
+        <td>{{ score.recorded_by }}</td>
+        <td>
+            <a href="{% url 'edit_score' score.id %}">Edit</a> |
+            <a href="{% url 'delete_score' score.id %}">Delete</a>
+        </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="8">No scores recorded yet.</td></tr>
+    {% endfor %}
+</table>
+
+<a href="{% url 'add_score' %}" class="bg-green-600 text-white px-4 py-2 mt-4 inline-block rounded">
+    + Add New Score
+</a>
+{% endblock %}

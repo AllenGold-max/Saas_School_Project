@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}Add Student | EduTrack{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4 text-center">Add / Edit Student</h2>
+
+    <form method="POST" class="shadow p-4 rounded bg-light">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="name" class="form-label">Full Name</label>
+            <input type="text" id="name" name="name" value="{{ form.name.value|default_if_none:'' }}" class="form-control" placeholder="Enter student name">
+            {% if form.name.errors %}
+                <div class="text-danger">{{ form.name.errors }}</div>
+            {% endif %}
+        </div>
+
+        <div class="mb-3">
+            <label for="student_class" class="form-label">Class</label>
+            {{ form.student_class }}
+            {% if form.student_class.errors %}
+                <div class="text-danger">{{ form.student_class.errors }}</div>
+            {% endif %}
+        </div>
+
+        <div class="mb-3">
+            <label for="age" class="form-label">Age</label>
+            <input type="number" id="age" name="age" value="{{ form.age.value|default_if_none:'' }}" class="form-control" placeholder="Enter student age">
+            {% if form.age.errors %}
+                <div class="text-danger">{{ form.age.errors }}</div>
+            {% endif %}
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100">Save Student</button>
+    </form>
+</div>
+{% endblock %}
