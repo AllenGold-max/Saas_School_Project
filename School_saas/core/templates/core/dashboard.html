@@ -3,6 +3,8 @@
 {% block title %}Dashboard | EduTrack{% endblock %}
 
 {% block content %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
 <div class="dashboard-container">
     <h2>Welcome, {{ user.username }} 🎉</h2>
     <p>Manage your school records, students, and more from here.</p>
@@ -26,5 +28,358 @@
             <a href="{% url 'teachers' %}" class="btn">Go</a>
         </div>
     </div>
+
+    <!-- Performance Analytics Section -->
+    <div class="analytics-section mt-5">
+        <h2>📊 Performance Analytics</h2>
+        <p class="text-muted">Overview of student and class performance.</p>
+
+        <div class="row">
+            <!-- Class Averages -->
+            <div class="col-md-6 mb-4">
+                <div class="card shadow-sm p-3">
+                    <h4>🏫 Class Averages</h4>
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Class</th>
+                                <th>Average Score</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for c in class_averages %}
+                            <tr>
+                                <td>{{ c.student__school_class__name }}</td>
+                                <td>{{ c.average_score|floatformat:2 }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="2">No data yet</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Top Students -->
+            <div class="col-md-6 mb-4">
+                <div class="card shadow-sm p-3">
+                    <h4>🏆 Top 5 Students</h4>
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Average</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for s in top_students %}
+                            <tr>
+                                <td>{{ s.student__first_name }} {{ s.student__last_name }}</td>
+                                <td>{{ s.average_score|floatformat:2 }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="2">No data yet</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Demographics Section -->
+<div class="analytics-section mt-5">
+    <h2>👩‍🏫 School Demographics</h2>
+    <p class="text-muted">Visual overview of your students’ distribution.</p>
+
+    <div class="row">
+        <!-- Gender Distribution -->
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm p-3">
+                <h4>👫 Gender Distribution</h4>
+                <canvas id="genderChart" height="200"></canvas>
+            </div>
+        </div>
+
+        <!-- Age Breakdown -->
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm p-3">
+                <h4>🎂 Age Breakdown</h4>
+                <canvas id="ageChart" height="200"></canvas>
+            </div>
+        </div>
+
+        <!-- Performance by Class -->
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm p-3">
+                <h4>📚 Overall Performance by Class</h4>
+                <canvas id="performanceChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
 </div>
+
+<script>
+    // Gender Chart
+    const genderCtx = document.getElementById('genderChart');
+    new Chart(genderCtx, {
+        type: 'pie',
+        data: {
+            labels: [{% for g in gender_data %}'{{ g.gender }}',{% endfor %}],
+            datasets: [{
+                data: [{% for g in gender_data %}{{ g.count }},{% endfor %}],
+                backgroundColor: ['#36A2EB', '#FF6384', '#FFCE56'],
+            }]
+        }
+    });
+
+    // Age Breakdown Chart
+    const ageCtx = document.getElementById('ageChart');
+    new Chart(ageCtx, {
+        type: 'bar',
+        data: {
+            labels: [{% for a in age_data %}'{{ a.age }}',{% endfor %}],
+            datasets: [{
+                label: 'Number of Students',
+                data: [{% for a in age_data %}{{ a.count }},{% endfor %}],
+                backgroundColor: 'rgba(75, 192, 192, 0.6)',
+            }]
+        },
+        options: {
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+
+    // Performance by Class Chart
+    const perfCtx = document.getElementById('performanceChart');
+    new Chart(perfCtx, {
+        type: 'bar',
+        data: {
+            labels: [{% for p in performance_by_class %}'{{ p.student__student_class__name }}',{% endfor %}],
+            datasets: [{
+                label: 'Average Score',
+                data: [{% for p in performance_by_class %}{{ p.average_score|floatformat:2 }},{% endfor %}],
+                backgroundColor: 'rgba(153, 102, 255, 0.6)',
+            }]
+        },
+        options: {
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+</script>
+
+
+        <!-- Subject Performance Chart -->
+        <div class="card shadow-sm p-4 mt-4">
+            <h4>📘 Subject Performance Trends</h4>
+            <canvas id="subjectChart" height="100"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const filterType = document.getElementById('filter-type');
+    const classFilter = document.getElementById('class-filter');
+    const suggestionsContainer = document.getElementById('suggestions-container');
+    const chartCanvas = document.getElementById('performanceChart');
+    let chartInstance = null;
+
+    // === INITIALIZE CHART ===
+    function initChart(labels, data) {
+        if (chartInstance) chartInstance.destroy();
+        chartInstance = new Chart(chartCanvas, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Average Score',
+                    data: data,
+                    backgroundColor: '#007bff88',
+                    borderColor: '#007bff',
+                    borderWidth: 1,
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: { beginAtZero: true, max: 100 }
+                }
+            }
+        });
+    }
+
+    // === FETCH FILTERED DATA ===
+    function fetchFilteredData() {
+        const type = filterType.value;
+        const classId = classFilter.value;
+
+        fetch(`/filter-suggestions/?filter=${type}&class=${classId}`)
+        .then(response => response.json())
+        .then(data => {
+            // --- Update Suggestions ---
+            suggestionsContainer.innerHTML = '';
+            if (data.suggestions.length === 0) {
+                suggestionsContainer.innerHTML = '<p class="text-muted">No results found for this filter.</p>';
+            } else {
+                data.suggestions.forEach(s => {
+                    const card = document.createElement('div');
+                    card.classList.add('suggestion-card', s.type);
+                    card.innerHTML = `
+                        <strong>${s.student_name}</strong><br>
+                        <small>${s.message}</small>
+                    `;
+                    suggestionsContainer.appendChild(card);
+                });
+            }
+
+            // --- Update Chart ---
+            const chartLabels = data.subject_trends ? data.subject_trends.map(t => t.subject) : [];
+            const chartData = data.subject_trends ? data.subject_trends.map(t => t.average_score) : [];
+            if (chartLabels.length) initChart(chartLabels, chartData);
+        });
+    }
+
+    // === FILTER EVENT LISTENERS ===
+    filterType.addEventListener('change', fetchFilteredData);
+    classFilter.addEventListener('change', fetchFilteredData);
+
+    // === INITIAL CHART LOAD ===
+    fetchFilteredData();
+});
+</script>
+
+<div id="suggestions-container" class="mt-4"></div>
+
+
+<!-- Personalized Insights Section -->
+<div class="card shadow-sm p-4 mt-5">
+    <h4>🧠 Student Insights & Suggestions</h4>
+    <p class="text-muted">Automatically generated based on students' performance.</p>
+
+    <!-- Filter Section -->
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+        <div class="mb-2">
+            <label for="classFilter" class="form-label fw-bold">Filter by Class:</label>
+            <select id="classFilter" class="form-select form-select-sm" style="width: 200px;">
+                <option value="">All Classes</option>
+                {% for c in classes %}
+                    <option value="{{ c.name }}">{{ c.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="mb-2">
+            <label for="typeFilter" class="form-label fw-bold">Filter by Type:</label>
+            <select id="typeFilter" class="form-select form-select-sm" style="width: 200px;">
+                <option value="">All</option>
+                <option value="alert">Alerts</option>
+                <option value="advice">Advice</option>
+                <option value="praise">Praise</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Suggestions List -->
+    <ul id="suggestionsList" class="list-group mt-3">
+        {% for s in suggestions %}
+            <li class="list-group-item list-group-item-{% if s.type == 'alert' %}danger{% elif s.type == 'advice' %}warning{% else %}success{% endif %}"
+                data-class="{{ s.student.school_class.name }}"
+                data-type="{{ s.type }}">
+                {% if s.type == 'alert' %}⚠️{% elif s.type == 'advice' %}💡{% else %}🌟{% endif %}
+                <strong>{{ s.student.first_name }} {{ s.student.last_name }}</strong> — {{ s.message }}
+            </li>
+        {% empty %}
+            <li class="list-group-item">No insights available yet. Record some student scores to see suggestions.</li>
+        {% endfor %}
+    </ul>
+</div>
+
+<!-- JavaScript for Filtering -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const classFilter = document.getElementById('classFilter');
+    const typeFilter = document.getElementById('typeFilter');
+    const suggestionsList = document.getElementById('suggestionsList');
+    const ctx = document.getElementById('subjectChart').getContext('2d');
+
+    // Initialize chart
+    let subjectChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: [{% for s in subject_trends %}'{{ s.subject__name }}',{% endfor %}],
+            datasets: [{
+                label: 'Average Score',
+                data: [{% for s in subject_trends %}{{ s.average_score|floatformat:2 }},{% endfor %}],
+                backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+
+    // Apply filters dynamically
+    async function applyFilters() {
+        const classValue = classFilter.value || "all";
+        const typeValue = typeFilter.value || "all";
+
+        // 1️⃣ Update suggestions dynamically
+        const suggestionResponse = await fetch(
+            `/filter_suggestions/?filter=${typeValue}&class=${classValue}`
+        );
+        const suggestionData = await suggestionResponse.json();
+
+        // Replace suggestion list
+        suggestionsList.innerHTML = '';
+        if (suggestionData.suggestions.length === 0) {
+            suggestionsList.innerHTML = '<li class="list-group-item">No insights available.</li>';
+        } else {
+            suggestionData.suggestions.forEach(s => {
+                const emoji = s.type === 'alert' ? '⚠️' : (s.type === 'advice' ? '💡' : '🌟');
+                const color = s.type === 'alert' ? 'danger' : (s.type === 'advice' ? 'warning' : 'success');
+                const li = `
+                    <li class="list-group-item list-group-item-${color}">
+                        ${emoji} <strong>${s.student_name}</strong> — ${s.message}
+                    </li>
+                `;
+                suggestionsList.insertAdjacentHTML('beforeend', li);
+            });
+        }
+
+        // 2️⃣ Update charts dynamically
+        const chartResponse = await fetch(`/filter_dashboard/?class_name=${classValue}`);
+        const chartData = await chartResponse.json();
+
+        // Update chart labels and data
+        subjectChart.data.labels = chartData.subject_trends.map(s => s.subject__name);
+        subjectChart.data.datasets[0].data = chartData.subject_trends.map(s => s.average_score);
+        subjectChart.update();
+    }
+
+    // Restore saved filters
+    const savedClass = localStorage.getItem('selectedClass');
+    const savedType = localStorage.getItem('selectedType');
+    if (savedClass) classFilter.value = savedClass;
+    if (savedType) typeFilter.value = savedType;
+
+    // Apply on load
+    applyFilters();
+
+    // Listen for changes
+    classFilter.addEventListener('change', () => {
+        localStorage.setItem('selectedClass', classFilter.value);
+        applyFilters();
+    });
+    typeFilter.addEventListener('change', () => {
+        localStorage.setItem('selectedType', typeFilter.value);
+        applyFilters();
+    });
+});
+</script>
 {% endblock %}

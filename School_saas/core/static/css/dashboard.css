@@ -1,0 +1,90 @@
+/* === DASHBOARD LAYOUT === */
+.dashboard-container {
+    background: #f8f9fc;
+    padding: 30px;
+    min-height: 100vh;
+    font-family: 'Poppins', sans-serif;
+}
+
+/* === CARDS === */
+.analytics-card {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    padding: 20px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.analytics-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+}
+
+/* === TITLES === */
+.analytics-card h5 {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+/* === METRICS === */
+.metric-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #007bff;
+}
+
+/* === FILTER SECTION === */
+.filter-bar {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.06);
+    padding: 15px 20px;
+    margin-bottom: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+.filter-bar select {
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    padding: 8px 12px;
+}
+
+/* === SUGGESTIONS === */
+.suggestion-card {
+    border-left: 5px solid transparent;
+    background: #fff;
+    padding: 15px 20px;
+    border-radius: 10px;
+    margin-bottom: 12px;
+    transition: all 0.2s ease;
+}
+.suggestion-card.alert { border-color: #e74c3c; }
+.suggestion-card.advice { border-color: #f1c40f; }
+.suggestion-card.praise { border-color: #27ae60; }
+.suggestion-card:hover {
+    transform: translateX(5px);
+    background: #fdfdfd;
+}
+.suggestion-card strong {
+    font-weight: 600;
+}
+
+/* === CHART AREA === */
+.chart-container {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    padding: 20px;
+    margin-top: 25px;
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+    .filter-bar {
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-start;
+    }
+}

@@ -54,7 +54,7 @@ class CustomUser(AbstractUser):
 # CLASS MODEL
 # -------------------
 class SchoolClass(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, unique=True)
     school = models.ForeignKey(School, on_delete=models.CASCADE, related_name='classes')
     year = models.CharField(max_length=20, blank=True)  # optional field like "2024/2025"
 
@@ -65,6 +65,10 @@ class SchoolClass(models.Model):
     def __str__(self):
         return f"{self.name} ({self.year}) - {self.school.name}"
 
+    def save(self, *args, **kwargs):
+        if self.name:
+            self.name = self.name.strip().title()
+        super().save(*args, **kwargs)
 
 # -------------------
 # SUBJECT MODEL

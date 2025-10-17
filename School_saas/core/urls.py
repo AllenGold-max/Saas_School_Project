@@ -6,7 +6,10 @@ urlpatterns = [
     path('dashboard/', views.dashboard, name='dashboard'),
     path('register/', views.register, name='register'),
     path('teachers/', views.teachers_view, name='teachers'),
-
+    path('filter-suggestions/', views.filter_suggestions, name='filter_suggestions'),
+    path('dashboard/filter/', views.filter_dashboard, name='filter_dashboard'),
+    path('filter_dashboard/', views.filter_dashboard, name='filter_dashboard'),
+    path('filter_suggestions/', views.filter_suggestions, name='filter_suggestions'),  # 👈 add this
 
     # Students
     path('students/', views.students, name='students'),
