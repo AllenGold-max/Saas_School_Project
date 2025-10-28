@@ -10,7 +10,6 @@ class StudentForm(forms.ModelForm):
             'admission_number',
             'gender',
             'date_of_birth',
-            'school',
             'school_class'
         ]
         widgets = {

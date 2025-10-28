@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Import School Data</h2>
+
+<form method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+    <label>Select Excel File (.xlsx):</label><br>
+    <input type="file" name="excel_file" accept=".xlsx" required><br><br>
+
+    <button type="submit">Upload</button>
+</form>
+
+{% if messages %}
+    {% for message in messages %}
+        <p style="color:green;">{{ message }}</p>
+    {% endfor %}
+{% endif %}
+{% endblock %}

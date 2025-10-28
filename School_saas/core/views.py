@@ -1,10 +1,11 @@
+import pandas as pd
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db import transaction
 from django.http import JsonResponse
 from django.db.models.functions import ExtractYear, Now
-from django.db.models import Avg, Count
+from django.db.models import Avg, Count, Q
 
 
 from .forms import StudentForm, SubjectForm, ScoreForm, SchoolClassForm
@@ -72,7 +73,8 @@ def dashboard(request):
     subjects = Subject.objects.filter(school=school)
     scores = Score.objects.filter(student__school=school)
     classes = SchoolClass.objects.filter(school=school)
-    
+    teachers = User.objects.filter(role='teacher', school=school)
+
     # 1️⃣ Class averages
     class_averages = (
         scores.values('student__school_class__name')
@@ -146,6 +148,7 @@ def dashboard(request):
                 'message': f"{student.first_name} {student.last_name} is performing excellently (average {avg_score:.1f}%)! Keep up the great work."
             })
 
+
     context = {
     'user': user,
     'students_count': students.count(),
@@ -158,10 +161,120 @@ def dashboard(request):
     'gender_data': gender_data,
     'age_data': age_data,
     'performance_by_class': performance_by_class,
+    'teachers': teachers,
 }
 
 
     return render(request, 'core/dashboard.html', context)
+
+@transaction.atomic
+def import_school_data(request):
+    if request.method == 'POST':
+        excel_file = request.FILES.get('excel_file')
+
+        if not excel_file:
+            messages.error(request, "Please upload an Excel file.")
+            return redirect('import_data')
+
+        try:
+            # Read Excel file efficiently
+            df = pd.read_excel(excel_file, dtype=str).fillna('')
+
+            # Normalize column names
+            df.columns = [c.strip().title() for c in df.columns]
+
+            # Bulk-collect objects before inserting
+            schools, classes, subjects, teachers, students, scores = [], [], [], [], [], []
+
+            # Caches to avoid repeated DB hits
+            school_cache, class_cache, subject_cache, teacher_cache, student_cache = {}, {}, {}, {}, {}
+
+            for _, row in df.iterrows():
+                school_name = row['School'].strip().title()
+                class_name = row['Class'].strip().title()
+                subject_name = row['Subject'].strip().title()
+                teacher_name = row['Teacher'].strip().title()
+                first_name = row['Student First Name'].strip().title()
+                last_name = row['Student Last Name'].strip().title()
+                gender = row['Gender'].strip().capitalize()
+                score_value = int(row['Score']) if row['Score'] else 0
+
+                # --- Schools ---
+                if school_name not in school_cache:
+                    school_obj, _ = School.objects.get_or_create(name=school_name)
+                    school_cache[school_name] = school_obj
+
+                # --- Classes ---
+                class_key = (school_name, class_name)
+                if class_key not in class_cache:
+                    class_obj, _ = SchoolClass.objects.get_or_create(name=class_name, school=school_cache[school_name])
+                    class_cache[class_key] = class_obj
+
+                # --- Subjects ---
+                subject_key = (school_name, subject_name)
+                if subject_key not in subject_cache:
+                    subject_obj, _ = Subject.objects.get_or_create(name=subject_name, school=school_cache[school_name])
+                    subject_cache[subject_key] = subject_obj
+
+                # --- Teachers ---
+                teacher_name = row['Teacher'].strip().title()
+
+                teacher_key = (school_name, teacher_name)
+                if teacher_key not in teacher_cache:
+                    teacher_obj, _ = User.objects.get_or_create(
+                    username=teacher_name.replace(" ", "_").lower(),  # e.g., "mr_adeoye"
+                    defaults={
+                    'school': school_cache[school_name],
+                    'role': 'teacher'
+        }
+    )
+                    # store the teacher's display name in one field if your model allows
+                    # for example, if your CustomUser model has a "full_name" or "display_name" field:
+                    if hasattr(teacher_obj, 'full_name'):
+                        teacher_obj.full_name = teacher_name
+                        teacher_obj.save()
+
+                    teacher_cache[teacher_key] = teacher_obj
+
+
+
+                # --- Students ---
+                import uuid
+
+                student_key = (first_name, last_name, class_name, school_name)
+                if student_key not in student_cache:
+                    admission_number = f"ADM-{uuid.uuid4().hex[:6].upper()}"
+                    student_obj, _ = Student.objects.get_or_create(
+                    admission_number=admission_number,
+                    defaults={
+                    'first_name': first_name,
+                    'last_name': last_name,
+                    'gender': gender,
+                    'school': school_cache[school_name],
+                    'school_class': class_cache[class_key]
+        }
+    )
+                    student_cache[student_key] = student_obj
+
+
+                # --- Scores ---
+                Score.objects.update_or_create(
+                    student=student_cache[student_key],
+                    subject=subject_cache[subject_key],
+                    defaults={'score': score_value}
+                )
+
+            messages.success(request, f"✅ Successfully imported {len(df)} records!")
+            return redirect('import_data')
+
+        except Exception as e:
+            transaction.set_rollback(True)
+            messages.error(request, f"❌ Error during import: {str(e)}")
+            return redirect('import_data')
+
+    return render(request, 'core/import_data.html')
+
+
 
 @login_required
 def filter_suggestions(request):
@@ -436,3 +549,8 @@ def delete_score(request, pk):
     score.delete()
     messages.success(request, 'Score deleted successfully!')
     return redirect('dashboard')
+
+@login_required
+def teacher_list(request):
+    teachers = User.objects.filter(role='teacher')
+    return render(request, 'core/teacher.html', {'teachers': teachers})

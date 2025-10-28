@@ -45,6 +45,7 @@ class CustomUser(AbstractUser):
     )
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='teacher')
     school = models.ForeignKey('School', on_delete=models.CASCADE, null=True, blank=True)
+    full_name = models.CharField(max_length=150, blank=True)
 
     def __str__(self):
         return f"{self.username} ({self.role})"
@@ -148,3 +149,10 @@ class Score(models.Model):
 
     def __str__(self):
         return f"{self.student.full_name} | {self.subject.name} | {self.term} | {self.session} | {self.score}"
+
+class ImportLog(models.Model):
+    uploaded_by = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True)
+    total_rows = models.IntegerField()
+    success_count = models.IntegerField()
+    failed_count = models.IntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
