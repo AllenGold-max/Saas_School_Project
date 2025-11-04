@@ -6,6 +6,11 @@ from django.db import transaction
 from django.http import JsonResponse
 from django.db.models.functions import ExtractYear, Now
 from django.db.models import Avg, Count, Q
+from django.shortcuts import render, redirect
+from django.contrib.auth import authenticate, login, logout
+from django.contrib import messages
+from django.contrib.auth.models import User  # or use your CustomUser model if you have one
+from django.contrib.auth.decorators import login_required
 
 
 from .forms import StudentForm, SubjectForm, ScoreForm, SchoolClassForm
@@ -53,7 +58,51 @@ def register(request):
 
     return render(request, 'accounts/register.html')
 
+def home(request):
+    if request.method == "POST":
+        form_type = request.POST.get("form_type")
 
+        # --- LOGIN HANDLER ---
+        if form_type == "login":
+            email = request.POST.get("email")
+            password = request.POST.get("password")
+
+            user = authenticate(request, username=email, password=password)
+            if user is not None:
+                login(request, user)
+                messages.success(request, f"Welcome back, {user.first_name or user.username}!")
+                return redirect("dashboard")
+            else:
+                messages.error(request, "Invalid email or password.")
+                return redirect("home")
+
+        # --- SIGNUP HANDLER ---
+        elif form_type == "signup":
+            fullname = request.POST.get("fullname")
+            email = request.POST.get("email")
+            password1 = request.POST.get("password1")
+            password2 = request.POST.get("password2")
+            role = request.POST.get("role")
+            school_name = request.POST.get("school_name")  # new field for SaaS school name
+
+            if password1 != password2:
+                messages.error(request, "Passwords do not match.")
+                return redirect("home")
+
+            if User.objects.filter(username=email).exists():
+                messages.error(request, "Email already registered.")
+                return redirect("home")
+
+            user = User.objects.create_user(username=email, email=email, password=password1)
+            user.first_name = fullname
+            user.role = role
+            user.school_name = school_name  # optional field in your model
+            user.save()
+
+            messages.success(request, "Account created successfully! You can now sign in.")
+            return redirect("dashboard")
+
+    return render(request, "core/home.html")
 
 # -----------------------
 # BASIC PAGES
@@ -68,12 +117,44 @@ def dashboard(request):
     user = request.user
     school = user.school
 
-    # Fetch school data
-    students = Student.objects.filter(school=school)
-    subjects = Subject.objects.filter(school=school)
-    scores = Score.objects.filter(student__school=school)
-    classes = SchoolClass.objects.filter(school=school)
-    teachers = User.objects.filter(role='teacher', school=school)
+    # ROLE CONTROL ✅
+    if user.role == 'teacher':
+        if user.assigned_class:
+            students = Student.objects.filter(
+                school=school,
+                school_class=user.assigned_class
+            )
+            scores = Score.objects.filter(
+                student__school=school,
+                student__school_class=user.assigned_class
+            )
+            subjects = Subject.objects.filter(
+                school=school,
+                teacher=user
+            )
+            teachers = None  # Teachers should not see teacher list
+            classes = [user.assigned_class]
+
+        else:
+            # If teacher not assigned a class yet, return empty safe defaults
+            students = Student.objects.none()
+            scores = Score.objects.none()
+            subjects = Subject.objects.filter(teacher=user)
+            classes = []
+            teachers = None
+    else:
+        # Admin / School Owner full access ✅
+        students = Student.objects.filter(school=school)
+        scores = Score.objects.filter(student__school=school)
+        subjects = Subject.objects.filter(school=school)
+        teachers = User.objects.filter(role='teacher', school=school)
+        classes = SchoolClass.objects.filter(school=school)
+
+     # ✅ Counts for dashboard cards
+    students_count = students.count()
+    subjects_count = subjects.count()
+    classes_count = len(classes)
+    Teacher_count = teachers.count() if teachers is not None else 0
 
     # 1️⃣ Class averages
     class_averages = (
@@ -153,6 +234,7 @@ def dashboard(request):
     'user': user,
     'students_count': students.count(),
     'subjects_count': subjects.count(),
+    'classes_count': classes_count,
     'class_averages': class_averages,
     'top_students': top_students,
     'subject_trends': subject_trends,
@@ -373,9 +455,42 @@ def filter_dashboard(request):
         'subject_trends': subject_trends,
     })
 
+@login_required
+def school_demographics_api(request):
+    school = request.user.school
+    students = Student.objects.filter(school=school)
 
-def home(request):
-    return render(request, 'core/home.html')
+    # Gender Data
+    gender_data = list(
+        students.values("gender")
+        .annotate(count=Count("gender"))
+        .order_by("gender")
+    )
+
+    # Age Data
+    age_data_raw = (
+        students
+        .annotate(age=ExtractYear(Now()) - ExtractYear("date_of_birth"))
+        .values("age")
+        .annotate(count=Count("age"))
+        .order_by("age")
+    )
+    age_data = {i["age"]: i["count"] for i in age_data_raw}
+
+    # Performance by Class
+    performance_data = list(
+        Score.objects.filter(student__school=school)
+        .values("student__school_class__name")
+        .annotate(avg_score=Avg("score"))
+        .order_by("student__school_class__name")
+    )
+
+    return JsonResponse({
+        "gender": gender_data,
+        "age_breakdown": age_data,
+        "class_performance": performance_data
+    })
+
 
 @login_required
 def students(request):

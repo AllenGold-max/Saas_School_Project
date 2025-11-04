@@ -4,98 +4,93 @@
 
 {% block content %}
 {% load static %}
+
+
 <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
-<div class="dashboard-container">
-    <h2>Welcome, {{ user.username }} 🎉</h2>
-    <p>Manage your school records, students, and more from here.</p>
-
-    <div class="dashboard-cards">
-        <div class="card">
-            <h3>Students</h3>
-            <p>View and manage student records</p>
-            <a href="{% url 'students' %}" class="btn">Go</a>
-        </div>
-
-        <div class="card">
-            <h3>Classes</h3>
-            <p>Manage school classes and subjects</p>
-            <a href="{% url 'classes' %}" class="btn">Go</a>
-        </div>
-
-        <div class="card">
-            <h3>Teachers</h3>
-            <p>View and assign teachers to subjects</p>
-            <a href="{% url 'teachers' %}" class="btn">Go</a>
-        </div>
+<div class="dashboard-cards">
+    <div class="analytics-card">
+        <h5>Students</h5>
+        <p class="text-muted">View and manage student records</p>
+        <a href="{% url 'students' %}" class="btn btn-primary btn-sm mt-2"></a>
     </div>
 
+    <div class="analytics-card">
+        <h5>Classes</h5>
+        <p class="text-muted">Manage school classes and subjects</p>
+        <a href="{% url 'classes' %}" class="btn btn-primary btn-sm mt-2"></a>
+    </div>
+
+    <div class="analytics-card">
+        <h5>Teachers</h5>
+        <p class="text-muted">View and assign teachers to subjects</p>
+        <a href="{% url 'teachers' %}" class="btn btn-primary btn-sm mt-2"></a>
+    </div>
+</div>
+
     <!-- Performance Analytics Section -->
-    <div class="analytics-section mt-5">
-        <h2>📊 Performance Analytics</h2>
-        <p class="text-muted">Overview of student and class performance.</p>
+<div class="analytics-section mt-5">
+    <h2 class="section-title">Performance Analytics</h2>
+    <p class="section-subtitle text-muted">Overview of student and class performance</p>
 
-        <div class="row">
-            <!-- Class Averages -->
-            <div class="col-md-6 mb-4">
-                <div class="card shadow-sm p-3">
-                    <h4>🏫 Class Averages</h4>
-                    <table class="table table-sm">
-                        <thead>
-                            <tr>
-                                <th>Class</th>
-                                <th>Average Score</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for c in class_averages %}
-                            <tr>
-                                <td>{{ c.student__school_class__name }}</td>
-                                <td>{{ c.average_score|floatformat:2 }}</td>
-                            </tr>
-                            {% empty %}
-                            <tr><td colspan="2">No data yet</td></tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Top Students -->
-            <div class="col-md-6 mb-4">
-                <div class="card shadow-sm p-3">
-                    <h4>🏆 Top 5 Students</h4>
-                    <table class="table table-sm">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Average</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for s in top_students %}
-                            <tr>
-                                <td>{{ s.student__first_name }} {{ s.student__last_name }}</td>
-                                <td>{{ s.average_score|floatformat:2 }}</td>
-                            </tr>
-                            {% empty %}
-                            <tr><td colspan="2">No data yet</td></tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+    <div class="analytics-grid">
+        <!-- Class Averages -->
+        <div class="analytics-card">
+            <h5>🏫 Class Averages</h5>
+            <table class="custom-table">
+                <thead>
+                    <tr>
+                        <th>Class</th>
+                        <th class="text-end">Average Score</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in class_averages %}
+                    <tr>
+                        <td>{{ c.student__school_class__name }}</td>
+                        <td class="text-end fw-bold">{{ c.average_score|floatformat:2 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="2" class="empty-cell">No data yet</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
+
+        <!-- Top Students -->
+        <div class="analytics-card">
+            <h5>🏆 Top 5 Students</h5>
+            <table class="custom-table">
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th class="text-end">Average</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in top_students %}
+                    <tr>
+                        <td>{{ s.student__first_name }} {{ s.student__last_name }}</td>
+                        <td class="text-end fw-bold">{{ s.average_score|floatformat:2 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="2" class="empty-cell">No data yet</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 
         <!-- Demographics Section -->
 <div class="analytics-section mt-5">
-    <h2>👩‍🏫 School Demographics</h2>
+    <h2>School Demographics</h2>
     <p class="text-muted">Visual overview of your students’ distribution.</p>
 
     <div class="row">
         <!-- Gender Distribution -->
         <div class="col-md-4 mb-4">
             <div class="card shadow-sm p-3">
-                <h4>👫 Gender Distribution</h4>
+                <h4>Gender Distribution</h4>
                 <canvas id="genderChart" height="200"></canvas>
             </div>
         </div>
@@ -117,6 +112,56 @@
         </div>
     </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+fetch("/api/school-demographics/")
+    .then(response => response.json())
+    .then(data => {
+        
+        // ✅ Gender Distribution
+        const genderLabels = data.gender.map(item => item.gender);
+        const genderCounts = data.gender.map(item => item.count);
+
+        new Chart(document.getElementById("genderChart"), {
+            type: "pie",
+            data: {
+                labels: genderLabels,
+                datasets: [{ data: genderCounts }]
+            }
+        });
+
+        // ✅ Age Breakdown
+        const ageLabels = Object.keys(data.age_breakdown);
+        const ageCounts = Object.values(data.age_breakdown);
+
+        new Chart(document.getElementById("ageChart"), {
+            type: "bar",
+            data: {
+                labels: ageLabels,
+                datasets: [{ data: ageCounts }]
+            },
+            options: { plugins: { legend: { display: false }} }
+        });
+
+        // ✅ Performance by Class
+        const classLabels = data.class_performance.map(item => item.student__school_class__name);
+        const avgScores = data.class_performance.map(item => item.avg_score);
+
+        new Chart(document.getElementById("performanceChart"), {
+            type: "line",
+            data: {
+                labels: classLabels,
+                datasets: [{ data: avgScores }]
+            },
+            options: {
+                beginAtZero: true,
+                plugins: { legend: { display: false }}
+            }
+        });
+    });
+</script>
+
 
 <script>
     // Gender Chart
@@ -382,4 +427,24 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const params = new URLSearchParams(window.location.search);
+    const show = params.get("show");
+    const loginPanel = document.getElementById("login-panel");
+    const signupPanel = document.getElementById("signup-panel");
+
+    if (show === "signup") {
+      loginPanel.classList.add("hidden-panel");
+      signupPanel.classList.remove("hidden-panel");
+      signupPanel.classList.add("active-panel");
+    } else {
+      signupPanel.classList.add("hidden-panel");
+      loginPanel.classList.remove("hidden-panel");
+      loginPanel.classList.add("active-panel");
+    }
+  });
+</script>
+
 {% endblock %}

@@ -1,23 +1,191 @@
 {% load static %}
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to EduTrack</title>
-    <link rel="stylesheet" href="{% static 'core/home.css' %}">
-</head>
-<body>
-    <h1>Welcome to EduTrack</h1>
-    <p>Your complete school management platform.</p>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EduTrack | Access Portal</title>
+  <link rel="stylesheet" href="{% static 'css/home.css' %}">
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 
-    {% if user.is_authenticated %}
-        <a href="{% url 'dashboard' %}" class="btn">Go to Dashboard</a>
-        <a href="{% url 'logout' %}" class="btn">Logout</a>
-    {% else %}
-        <a href="{% url 'login' %}" class="btn">Login</a>
-        <a href="{% url 'register' %}" class="btn">Register</a>
-    {% endif %}
-</body>
-</html>
+  <style>
+    body {
+      background: linear-gradient(to right, #3a7bd5, #3a6073);
+      font-family: 'Poppins', sans-serif;
+    }
+    .panel {
+      transition: all 0.6s ease-in-out;
+    }
+    .hidden-panel {
+      opacity: 0;
+      transform: translateX(100%);
+      position: absolute;
+    }
+    .active-panel {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    .role-toggle button {
+      flex: 1;
+      padding: 10px;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .role-toggle button.active {
+      background: #2563eb;
+      color: white;
+    }
+  </style>
+</head>
+
+<body class="flex items-center justify-center min-h-screen">
+
+  <div class="relative w-full max-w-4xl bg-white shadow-2xl rounded-2xl overflow-hidden">
+
+    <!-- LOGIN PANEL -->
+    <div id="login-panel" class="panel active-panel p-10 w-full md:w-1/2 mx-auto relative">
+      <h2 class="text-3xl font-semibold text-center text-gray-800 mb-6">Welcome Back 👋</h2>
+
+      <!-- Role Toggle -->
+      <div class="role-toggle flex justify-between mb-6 bg-gray-100 rounded-lg">
+        <button id="login-student-btn" class="active">Student</button>
+        <button id="login-educator-btn">Educator</button>
+      </div>
+
+      <form method="POST" action="" class="space-y-4">
+        {% csrf_token %}
+        <input type="hidden" name="form_type" value="login">
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-600">Email</label>
+          <input type="email" name="email" required class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-400">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-600">Password</label>
+          <input type="password" name="password" required class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-400">
+        </div>
+
+        <!-- School Input -->
+        <div id="login-school-field">
+          <label class="block text-sm font-medium text-gray-600">School Name</label>
+          <input type="text" name="school_name" placeholder="Enter your school name" class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-400">
+        </div>
+
+        <div class="flex justify-between text-sm items-center">
+          <a href="#" class="text-blue-500 hover:underline">Forgot Password?</a>
+        </div>
+
+        <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition">Sign In</button>
+      </form>
+
+      <p class="text-center text-sm mt-6 text-gray-600">
+        New user?
+        <a href="#" id="show-signup" class="text-blue-500 hover:underline font-semibold">Create your account here</a>
+      </p>
+    </div>
+
+    <!-- SIGNUP PANEL -->
+    <div id="signup-panel" class="panel hidden-panel p-10 w-full md:w-1/2 mx-auto relative">
+      <h2 class="text-3xl font-semibold text-center text-gray-800 mb-6">Create Account 🚀</h2>
+
+      <form method="POST" action="" class="space-y-4">
+        {% csrf_token %}
+        <input type="hidden" name="form_type" value="signup">
+
+        <div>
+          <label class="block text-sm font-medium text-gray-600">Full Name</label>
+          <input type="text" name="fullname" required class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-400">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-600">Email</label>
+          <input type="email" name="email" required class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-400">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-600">Password</label>
+          <input type="password" name="password1" required class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-400">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-600">Confirm Password</label>
+          <input type="password" name="password2" required class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-400">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-600">Register as:</label>
+          <select name="role" id="roleSelect" class="border rounded-lg px-3 py-2 w-full">
+            <option value="student">Student</option>
+            <option value="teacher">Teacher</option>
+            <option value="educator">Educator</option>
+          </select>
+        </div>
+
+        <div id="signup-school-field">
+          <label class="block text-sm font-medium text-gray-600">School Name</label>
+          <input type="text" name="school_name" placeholder="Enter your school name" class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-400">
+        </div>
+
+        <button type="submit" class="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition">Sign Up</button>
+      </form>
+
+      <p class="text-center text-sm mt-6 text-gray-600">
+        Already have an account?
+        <a href="#" id="show-login" class="text-blue-500 hover:underline font-semibold">Login here</a>
+      </p>
+    </div>
+  </div> <!-- closes main container -->
+
+  <!-- ✅ SCRIPT SECTION -->
+  <script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const loginPanel = document.getElementById("login-panel");
+    const signupPanel = document.getElementById("signup-panel");
+    const showSignup = document.getElementById("show-signup");
+    const showLogin = document.getElementById("show-login");
+    const roleSelect = document.getElementById("roleSelect");
+    const loginStudentBtn = document.getElementById("login-student-btn");
+    const loginEducatorBtn = document.getElementById("login-educator-btn");
+    const loginSchoolField = document.getElementById("login-school-field");
+    const signupSchoolField = document.getElementById("signup-school-field");
+
+    // 🔁 Switch to Sign Up
+    showSignup.addEventListener("click", (e) => {
+      e.preventDefault();
+      loginPanel.classList.remove("active-panel");
+      loginPanel.classList.add("hidden-panel");
+      signupPanel.classList.remove("hidden-panel");
+      signupPanel.classList.add("active-panel");
+    });
+
+    // 🔁 Switch to Login
+    showLogin.addEventListener("click", (e) => {
+      e.preventDefault();
+      signupPanel.classList.remove("active-panel");
+      signupPanel.classList.add("hidden-panel");
+      loginPanel.classList.remove("hidden-panel");
+      loginPanel.classList.add("active-panel");
+    });
+
+    // 🎓 Role change inside signup
+    roleSelect.addEventListener("change", () => {
+      if (roleSelect.value === "educator") {
+        signupSchoolField.style.display = "block";
+      } else {
+        signupSchoolField.style.display = "none";
+      }
+    });
+
+    // 🧑🏾 Role toggle inside login
+    loginStudentBtn.addEventListener("click", () => {
+      loginStudentBtn.classList.add("active");
+      loginEducatorBtn.classList.remove("active");
+      loginSchoolField.style.display = "none";
+    });
+
+    loginEducatorBtn.addEventListener("click", () => {
+      loginEducatorBtn.classList.add("active");
+      loginStudentBtn.classList.remove("active");
+      loginSchoolField.style.display = "block";
+    });
+  });
+  </script>

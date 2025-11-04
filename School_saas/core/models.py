@@ -2,6 +2,8 @@
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.contrib.auth.models import AbstractUser
+from django.conf import settings
+
 
 # -------------------
 # CHOICES
@@ -34,22 +36,6 @@ class School(models.Model):
         verbose_name_plural = "Schools"
 
 
-# -------------------
-# CUSTOM USER MODEL
-# -------------------
-class CustomUser(AbstractUser):
-    ROLE_CHOICES = (
-        ('admin', 'Admin'),
-        ('teacher', 'Teacher'),
-        ('student', 'Student'),
-    )
-    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='teacher')
-    school = models.ForeignKey('School', on_delete=models.CASCADE, null=True, blank=True)
-    full_name = models.CharField(max_length=150, blank=True)
-
-    def __str__(self):
-        return f"{self.username} ({self.role})"
-
 
 # -------------------
 # CLASS MODEL
@@ -78,6 +64,13 @@ class Subject(models.Model):
     name = models.CharField(max_length=120)
     code = models.CharField(max_length=20, blank=True, help_text="Optional subject code")
     school = models.ForeignKey(School, on_delete=models.CASCADE, related_name='subjects', null=True, blank=True)
+    teacher = models.ForeignKey(
+    settings.AUTH_USER_MODEL,
+    on_delete=models.SET_NULL,
+    null=True,
+    blank=True,
+    related_name='subjects'
+)
 
     def __str__(self):
         return f"{self.name} ({self.school.name if self.school else 'No School'})"
@@ -150,8 +143,36 @@ class Score(models.Model):
     def __str__(self):
         return f"{self.student.full_name} | {self.subject.name} | {self.term} | {self.session} | {self.score}"
 
+# -------------------
+# CUSTOM USER MODEL
+# -------------------
+class CustomUser(AbstractUser):
+    ROLE_CHOICES = (
+        ('admin', 'Admin'),
+        ('teacher', 'Teacher'),
+        ('student', 'Student'),
+    )
+
+    email = models.EmailField(unique=True)
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='teacher')
+    school = models.ForeignKey('School', on_delete=models.CASCADE, null=True, blank=True)
+    full_name = models.CharField(max_length=150, blank=True)
+    assigned_class = models.ForeignKey(
+        'SchoolClass',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='class_teachers'
+    )
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username']
+
+    def __str__(self):
+        return f"{self.username} ({self.role})"
+
 class ImportLog(models.Model):
-    uploaded_by = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True)
+    uploaded_by = models.ForeignKey('CustomUser', on_delete=models.SET_NULL, null=True)
     total_rows = models.IntegerField()
     success_count = models.IntegerField()
     failed_count = models.IntegerField()

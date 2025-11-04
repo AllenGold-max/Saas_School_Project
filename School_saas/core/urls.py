@@ -4,13 +4,15 @@ from . import views
 urlpatterns = [
     path('', views.home, name='home'),
     path('dashboard/', views.dashboard, name='dashboard'),
-    path('register/', views.register, name='register'),
     path('teachers/', views.teacher_list, name='teacher_list'),
     path('filter-suggestions/', views.filter_suggestions, name='filter_suggestions'),
     path('dashboard/filter/', views.filter_dashboard, name='filter_dashboard'),
     path('filter_dashboard/', views.filter_dashboard, name='filter_dashboard'),
     path('filter_suggestions/', views.filter_suggestions, name='filter_suggestions'),  # 👈 add this
     path("import-data/", views.import_school_data, name="import_data"),
+    path('teachers/', views.teachers_view, name='teachers'),
+    path("api/school-demographics/", views.school_demographics_api, name="school_demographics_api"),
+
 
     # Students
     path('students/', views.students, name='students'),

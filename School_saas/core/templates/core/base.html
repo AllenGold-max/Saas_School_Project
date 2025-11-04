@@ -9,19 +9,18 @@
 </head>
 <body>
     <nav class="navbar">
-        <div class="container">
-            <a href="{% url 'dashboard' %}" class="logo">EduTrack</a>
-            <ul class="nav-links">
-                {% if user.is_authenticated %}
-                    <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
-                    <li><a href="{% url 'logout' %}">Logout</a></li>
-                {% else %}
-                    <li><a href="{% url 'login' %}">Login</a></li>
-                    <li><a href="{% url 'register' %}">Register</a></li>
-                {% endif %}
-            </ul>
-        </div>
-    </nav>
+    <div class="container">
+        <a href="{% url 'home' %}" class="logo">EduTrack</a>
+        <ul class="nav-links">
+            {% if user.is_authenticated %}
+                <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                <li><a href="{% url 'logout' %}">Logout</a></li>
+            {% else %}
+                <li><a href="{% url 'home' %}">Home</a></li>
+            {% endif %}
+        </ul>
+    </div>
+</nav>
 
     <main class="content">
         {% block content %}{% endblock %}
